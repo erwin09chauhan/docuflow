@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DocuFlow.Api/DocuFlow.Api.csproj" />
+    <Project Path="src/DocuFlow.Application/DocuFlow.Application.csproj" />
+    <Project Path="src/DocuFlow.Domain/DocuFlow.Domain.csproj" />
+    <Project Path="src/DocuFlow.Infrastructure/DocuFlow.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DocuFlow.IntegrationTests/DocuFlow.IntegrationTests.csproj" />
+    <Project Path="tests/DocuFlow.UnitTests/DocuFlow.UnitTests.csproj" />
+  </Folder>
+</Solution>

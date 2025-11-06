@@ -35,7 +35,7 @@ public class ProcessExtractionCommandHandler : IRequestHandler<ProcessExtraction
         var existingJobs = await _extractionJobRepository.GetByDocumentIdAsync(document.Id, cancellationToken);
         var attemptNumber = existingJobs.Count + 1;
 
-        var job = ExtractionJob.Create(document.Id, attemptNumber);
+        var job = ExtractionJob.Create(document.Id, document.TenantId, document.Schema);
         await _extractionJobRepository.AddAsync(job, cancellationToken);
 
         document.UpdateStatus(DocumentStatus.Processing);
@@ -60,7 +60,7 @@ public class ProcessExtractionCommandHandler : IRequestHandler<ProcessExtraction
         }
 
         document.UpdateStatus(DocumentStatus.Completed);
-        job.MarkSuccessful();
+        job.MarkCompleted();
 
         await _documentRepository.UpdateAsync(document, cancellationToken);
         await _extractionJobRepository.UpdateAsync(job, cancellationToken);

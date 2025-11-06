@@ -5,17 +5,16 @@ namespace DocuFlow.Domain.Entities;
 public class AuditLog : BaseEntity
 {
     public Guid TenantId { get; private set; }
-    public Guid? UserId { get; private set; }
+    public Guid UserId { get; private set; }
     public string Action { get; private set; } = string.Empty;
     public string EntityType { get; private set; } = string.Empty;
     public Guid EntityId { get; private set; }
-    public string? MetadataJson { get; private set; }
-    public DateTime CreatedAt { get; private set; }
+    public string? Details { get; private set; }
 
     private AuditLog() { }
 
-    public static AuditLog Create(Guid tenantId, Guid? userId, string action,
-        string entityType, Guid entityId, string? metadataJson = null)
+    public static AuditLog Create(Guid tenantId, Guid userId, string action,
+        string entityType, Guid entityId, string? details = null)
     {
         return new AuditLog
         {
@@ -24,8 +23,7 @@ public class AuditLog : BaseEntity
             Action = action,
             EntityType = entityType,
             EntityId = entityId,
-            MetadataJson = metadataJson,
-            CreatedAt = DateTime.UtcNow
+            Details = details
         };
     }
 }

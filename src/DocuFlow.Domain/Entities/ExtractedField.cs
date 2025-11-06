@@ -4,15 +4,14 @@ namespace DocuFlow.Domain.Entities;
 
 public class ExtractedField : BaseEntity
 {
-    public Guid DocumentId { get; private set; }
+    public Guid ExtractionJobId { get; private set; }
     public string FieldName { get; private set; } = string.Empty;
     public string FieldValue { get; private set; } = string.Empty;
     public decimal ConfidenceScore { get; private set; }
-    public DateTime CreatedAt { get; private set; }
 
     private ExtractedField() { }
 
-    public static ExtractedField Create(Guid documentId, string fieldName,
+    public static ExtractedField Create(Guid extractionJobId, string fieldName,
         string fieldValue, decimal confidenceScore)
     {
         if (confidenceScore < 0 || confidenceScore > 1)
@@ -21,11 +20,10 @@ public class ExtractedField : BaseEntity
 
         return new ExtractedField
         {
-            DocumentId = documentId,
+            ExtractionJobId = extractionJobId,
             FieldName = fieldName.Trim(),
             FieldValue = fieldValue.Trim(),
-            ConfidenceScore = confidenceScore,
-            CreatedAt = DateTime.UtcNow
+            ConfidenceScore = confidenceScore
         };
     }
 }

@@ -28,7 +28,7 @@ public class GetAuditLogsQueryHandler : IRequestHandler<GetAuditLogsQuery, Resul
             l.Action,
             l.EntityType,
             l.EntityId,
-            l.MetadataJson,
+            l.Details,
             l.CreatedAt)).ToList();
 
         var paginated = new PaginatedList<AuditLogDto>(dtos, logs.TotalCount, logs.Page, logs.PageSize);

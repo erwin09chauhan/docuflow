@@ -2,6 +2,8 @@
 
 public record AuthDto(
     string AccessToken,
-    DateTime ExpiresAt,
+    DateTime AccessTokenExpiresAt,
+    string RefreshToken,
+    DateTime RefreshTokenExpiresAt,
     UserDto User
 );

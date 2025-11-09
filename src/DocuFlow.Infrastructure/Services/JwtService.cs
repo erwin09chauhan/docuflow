@@ -1,8 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using DocuFlow.Application.Abstractions.Services;
-using DocuFlow.Domain.Entities;
+using DocuFlow.Infrastructure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,7 +18,7 @@ public class JwtService : IJwtService
         _configuration = configuration;
     }
 
-    public TokenResult GenerateToken(User user)
+    public TokenResult GenerateAccessToken(string userId, string email, string role, Guid tenantId)
     {
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_configuration["Jwt:Secret"]!));
@@ -26,14 +27,14 @@ public class JwtService : IJwtService
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role.ToString()),
-            new Claim("tenantId", user.TenantId.ToString())
-        };
+        new Claim(ClaimTypes.NameIdentifier, userId),
+        new Claim(ClaimTypes.Email, email),
+        new Claim(ClaimTypes.Role, role),
+        new Claim("tenantId", tenantId.ToString())
+    };
 
-        var expiresAt = DateTime.UtcNow.AddHours(
-            int.Parse(_configuration["Jwt:ExpiryHours"] ?? "24"));
+        var expiresAt = DateTime.UtcNow.AddMinutes(
+            int.Parse(_configuration["Jwt:ExpiryMinutes"] ?? "15"));
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
@@ -45,5 +46,16 @@ public class JwtService : IJwtService
         return new TokenResult(
             new JwtSecurityTokenHandler().WriteToken(token),
             expiresAt);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+    }
+
+    public DateTime GetRefreshTokenExpiry()
+    {
+        return DateTime.UtcNow.AddDays(
+            int.Parse(_configuration["Jwt:RefreshTokenExpiryDays"] ?? "7"));
     }
 }

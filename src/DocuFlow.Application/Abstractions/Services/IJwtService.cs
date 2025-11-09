@@ -1,13 +1,20 @@
-﻿using DocuFlow.Domain.Entities;
-
-namespace DocuFlow.Application.Abstractions.Services;
+﻿namespace DocuFlow.Application.Abstractions.Services;
 
 public record TokenResult(
     string AccessToken,
     DateTime ExpiresAt
 );
 
+public record AuthResult(
+    string AccessToken,
+    DateTime AccessTokenExpiresAt,
+    string RefreshToken,
+    DateTime RefreshTokenExpiresAt
+);
+
 public interface IJwtService
 {
-    TokenResult GenerateToken(User user);
+    TokenResult GenerateAccessToken(string userId, string email, string role, Guid tenantId);
+    string GenerateRefreshToken();
+    DateTime GetRefreshTokenExpiry();
 }

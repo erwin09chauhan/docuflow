@@ -1,14 +1,8 @@
 ﻿using System.Security.Claims;
+using DocuFlow.Application.Abstractions.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace DocuFlow.Infrastructure.Services;
-
-public interface ICurrentUserService
-{
-    Guid UserId { get; }
-    string Email { get; }
-    string Role { get; }
-}
 
 public class CurrentUserService : ICurrentUserService
 {
@@ -19,7 +13,7 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public Guid UserId
+    public Guid? UserId
     {
         get
         {
@@ -27,19 +21,17 @@ public class CurrentUserService : ICurrentUserService
                 .FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (claim is null || !Guid.TryParse(claim, out var userId))
-                throw new UnauthorizedAccessException("User ID not found in token.");
+                return null;
 
             return userId;
         }
     }
 
-    public string Email =>
+    public string? Email =>
         _httpContextAccessor.HttpContext?.User
-            .FindFirst(ClaimTypes.Email)?.Value
-        ?? throw new UnauthorizedAccessException("Email not found in token.");
+            .FindFirst(ClaimTypes.Email)?.Value;
 
-    public string Role =>
+    public string? Role =>
         _httpContextAccessor.HttpContext?.User
-            .FindFirst(ClaimTypes.Role)?.Value
-        ?? throw new UnauthorizedAccessException("Role not found in token.");
+            .FindFirst(ClaimTypes.Role)?.Value;
 }

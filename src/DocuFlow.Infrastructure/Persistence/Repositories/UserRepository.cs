@@ -17,7 +17,10 @@ public class UserRepository : IUserRepository
         => await _context.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
     public async Task<User?> GetByEmailAsync(string email, Guid tenantId, CancellationToken cancellationToken = default)
-    => await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId, cancellationToken);
+        => await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId, cancellationToken);
+
+    public async Task<List<User>> GetByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
+        => await _context.Users.Where(u => u.TenantId == tenantId).ToListAsync(cancellationToken);
 
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         => await _context.Users.AnyAsync(u => u.Email == email, cancellationToken);

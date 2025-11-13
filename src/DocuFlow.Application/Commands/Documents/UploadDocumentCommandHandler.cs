@@ -11,13 +11,16 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 {
     private readonly IDocumentRepository _documentRepository;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IBackgroundJobService _backgroundJobService;
 
     public UploadDocumentCommandHandler(
         IDocumentRepository documentRepository,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        IBackgroundJobService backgroundJobService)
     {
         _documentRepository = documentRepository;
         _fileStorageService = fileStorageService;
+        _backgroundJobService = backgroundJobService;
     }
 
     public async Task<Result<DocumentDto>> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
@@ -38,6 +41,9 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
             request.Schema);
 
         await _documentRepository.AddAsync(document, cancellationToken);
+
+        // Queue background job
+        _backgroundJobService.Enqueue(document.Id, request.TenantId);
 
         var dto = new DocumentDto(
             document.Id,

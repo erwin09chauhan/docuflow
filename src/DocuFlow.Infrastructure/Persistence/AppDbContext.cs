@@ -14,7 +14,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
-    public DbSet<User> Users => Set<User>();
+    public DbSet<User> DomainUsers => Set<User>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<ExtractionJob> ExtractionJobs => Set<ExtractionJob>();
     public DbSet<ExtractedField> ExtractedFields => Set<ExtractedField>();

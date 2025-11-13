@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +62,12 @@ app.UseMiddleware<AuditMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Hangfire Dashboard
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new Hangfire.Dashboard.LocalRequestsOnlyAuthorizationFilter() }
+});
 
 app.MapControllers();
 

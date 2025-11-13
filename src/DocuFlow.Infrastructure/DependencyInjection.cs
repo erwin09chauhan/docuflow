@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 namespace DocuFlow.Infrastructure;
 
@@ -51,9 +53,26 @@ public static class DependencyInjection
         services.AddScoped<ICurrentTenantService, CurrentTenantService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
+        services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 
         // AI Extraction
         services.AddHttpClient<IAiExtractionService, AiExtractionService>();
+
+        // Hangfire
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(options =>
+                options.UseNpgsqlConnection(
+                    configuration.GetConnectionString("DefaultConnection"))));
+
+        services.AddHangfireServer(options =>
+        {
+            options.WorkerCount = 5;
+            options.Queues = new[] { "critical", "default" };
+        });
 
         // HTTP Context
         services.AddHttpContextAccessor();

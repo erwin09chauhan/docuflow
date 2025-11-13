@@ -27,6 +27,13 @@ public class ExtractionJobRepository : IExtractionJobRepository
             .OrderByDescending(e => e.CreatedAt)
             .ToListAsync(cancellationToken);
 
+    public async Task<ExtractionJob?> GetLatestByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default)
+    => await _context.ExtractionJobs
+        .Include(e => e.ExtractedFields)
+        .Where(e => e.DocumentId == documentId)
+        .OrderByDescending(e => e.CreatedAt)
+        .FirstOrDefaultAsync(cancellationToken);
+
     public async Task<IEnumerable<ExtractionJob>> GetPendingJobsAsync(CancellationToken cancellationToken = default)
         => await _context.ExtractionJobs
             .Where(e => e.Status == DocumentStatus.Queued)

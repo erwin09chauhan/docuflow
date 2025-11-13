@@ -14,23 +14,23 @@ public class UserRepository : IUserRepository
     }
 
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => await _context.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+      => await _context.DomainUsers.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
     public async Task<User?> GetByEmailAsync(string email, Guid tenantId, CancellationToken cancellationToken = default)
-        => await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId, cancellationToken);
+        => await _context.DomainUsers.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId, cancellationToken);
 
     public async Task<List<User>> GetByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
-        => await _context.Users.Where(u => u.TenantId == tenantId).ToListAsync(cancellationToken);
+        => await _context.DomainUsers.Where(u => u.TenantId == tenantId).ToListAsync(cancellationToken);
 
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
-        => await _context.Users.AnyAsync(u => u.Email == email, cancellationToken);
+        => await _context.DomainUsers.AnyAsync(u => u.Email == email, cancellationToken);
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
-        => await _context.Users.AddAsync(user, cancellationToken);
+        => await _context.DomainUsers.AddAsync(user, cancellationToken);
 
     public Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
-        _context.Users.Update(user);
+        _context.DomainUsers.Update(user);
         return Task.CompletedTask;
     }
 }

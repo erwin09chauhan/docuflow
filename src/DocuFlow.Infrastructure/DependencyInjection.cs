@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Hangfire;
 using Hangfire.PostgreSql;
+using DocuFlow.Infrastructure.Services.AiExtraction;
 
 namespace DocuFlow.Infrastructure;
 
@@ -56,8 +57,21 @@ public static class DependencyInjection
         services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
         services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 
-        // AI Extraction
-        services.AddHttpClient<IAiExtractionService, AiExtractionService>();
+        // AI Extraction — provider selected via config
+        var aiProvider = configuration["AiProvider"] ?? "Mock";
+
+        switch (aiProvider)
+        {
+            case "OpenAI":
+                services.AddHttpClient<IAiExtractionService, OpenAiExtractionService>();
+                break;
+            case "AzureOpenAI":
+                services.AddHttpClient<IAiExtractionService, AzureOpenAiExtractionService>();
+                break;
+            default:
+                services.AddScoped<IAiExtractionService, MockAiExtractionService>();
+                break;
+        }
 
         // Hangfire
         services.AddHangfire(config => config

@@ -1,8 +1,9 @@
 ﻿using DocuFlow.Domain.Common;
+using MediatR;
 
 namespace DocuFlow.Domain.Events;
 
-public class ExtractionFailedEvent : DomainEvent
+public class ExtractionFailedEvent : DomainEvent, INotification
 {
     public Guid DocumentId { get; }
     public Guid TenantId { get; }

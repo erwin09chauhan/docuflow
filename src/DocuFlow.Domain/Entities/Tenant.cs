@@ -8,6 +8,7 @@ public class Tenant : BaseEntity
     public string Slug { get; private set; } = string.Empty;
     public string Plan { get; private set; } = "Free";
     public bool IsActive { get; private set; }
+    public string? WebhookUrl { get; private set; }
 
     private readonly List<User> _users = new();
     private readonly List<Document> _documents = new();
@@ -31,4 +32,5 @@ public class Tenant : BaseEntity
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
     public void UpdatePlan(string plan) => Plan = plan;
+    public void UpdateWebhookUrl(string? webhookUrl) => WebhookUrl = webhookUrl;
 }

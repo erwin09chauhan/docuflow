@@ -56,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
         services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+        services.AddHttpClient<IWebhookService, WebhookService>();
 
         // AI Extraction — provider selected via config
         var aiProvider = configuration["AiProvider"] ?? "Mock";

@@ -1,8 +1,8 @@
 ﻿using DocuFlow.Application.Abstractions.Repositories;
 using DocuFlow.Application.Abstractions.Services;
-using DocuFlow.Domain.Entities;
 using DocuFlow.Domain.Enums;
 using DocuFlow.Infrastructure.Services;
+using DocuFlow.UnitTests.Builders;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -50,12 +50,12 @@ public class DocumentProcessingServiceTests
 
         _documentRepoMock
             .Setup(x => x.GetByIdAsync(documentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Document?)null);
+            .ReturnsAsync((DocuFlow.Domain.Entities.Document?)null);
 
         // Act
         await _service.ProcessAsync(documentId, tenantId);
 
-        // Assert — file storage should never be called if document not found
+        // Assert
         _fileStorageMock.Verify(
             x => x.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -65,21 +65,24 @@ public class DocumentProcessingServiceTests
     public async Task ProcessAsync_SuccessfulExtraction_SetsStatusToCompleted()
     {
         // Arrange
-        var documentId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
 
-        var document = Document.Create(tenantId, Guid.NewGuid(), "invoice.pdf",
-                    "uploads/invoice.pdf", 1024, "application/pdf", DocuFlow.Domain.Enums.ExtractionSchema.Invoice);
-        document.UpdateStatus(DocumentStatus.Queued);
+        var document = new DocumentBuilder()
+            .WithTenantId(tenantId)
+            .WithStatus(DocumentStatus.Queued)
+            .Build();
 
-        var job = ExtractionJob.Create(document.Id, tenantId, DocuFlow.Domain.Enums.ExtractionSchema.Invoice);
+        var job = new ExtractionJobBuilder()
+            .WithDocumentId(document.Id)
+            .WithTenantId(tenantId)
+            .Build();
 
         _documentRepoMock
-            .Setup(x => x.GetByIdAsync(documentId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
 
         _documentRepoMock
-            .Setup(x => x.UpdateAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpdateAsync(It.IsAny<DocuFlow.Domain.Entities.Document>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _fileStorageMock
@@ -87,22 +90,22 @@ public class DocumentProcessingServiceTests
             .ReturnsAsync(new MemoryStream(System.Text.Encoding.UTF8.GetBytes("file content")));
 
         _aiExtractionMock
-                    .Setup(x => x.ExtractAsync(It.IsAny<ExtractionRequest>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new ExtractionServiceResult(true, new List<ExtractedFieldResult>
-                    {
+            .Setup(x => x.ExtractAsync(It.IsAny<ExtractionRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ExtractionServiceResult(true, new List<ExtractedFieldResult>
+            {
                 new ExtractedFieldResult("InvoiceNumber", "INV-001", 0.99)
-                    }));
+            }));
 
         _extractionJobRepoMock
             .Setup(x => x.GetLatestByDocumentIdAsync(document.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(job);
 
         _extractionJobRepoMock
-            .Setup(x => x.UpdateAsync(It.IsAny<ExtractionJob>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpdateAsync(It.IsAny<DocuFlow.Domain.Entities.ExtractionJob>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        await _service.ProcessAsync(documentId, tenantId);
+        await _service.ProcessAsync(document.Id, tenantId);
 
         // Assert
         document.Status.Should().Be(DocumentStatus.Completed);
@@ -113,19 +116,19 @@ public class DocumentProcessingServiceTests
     public async Task ProcessAsync_AiExtractionFails_SetsStatusToFailed()
     {
         // Arrange
-        var documentId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
 
-        var document = Document.Create(tenantId, Guid.NewGuid(), "invoice.pdf",
-                    "uploads/invoice.pdf", 1024, "application/pdf", DocuFlow.Domain.Enums.ExtractionSchema.Invoice);
-        document.UpdateStatus(DocumentStatus.Queued);
+        var document = new DocumentBuilder()
+            .WithTenantId(tenantId)
+            .WithStatus(DocumentStatus.Queued)
+            .Build();
 
         _documentRepoMock
-            .Setup(x => x.GetByIdAsync(documentId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
 
         _documentRepoMock
-            .Setup(x => x.UpdateAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpdateAsync(It.IsAny<DocuFlow.Domain.Entities.Document>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _fileStorageMock
@@ -133,17 +136,17 @@ public class DocumentProcessingServiceTests
             .ReturnsAsync(new MemoryStream(System.Text.Encoding.UTF8.GetBytes("file content")));
 
         _aiExtractionMock
-                    .Setup(x => x.ExtractAsync(It.IsAny<ExtractionRequest>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new ExtractionServiceResult(false, new List<ExtractedFieldResult>(), "AI service unavailable"));
+            .Setup(x => x.ExtractAsync(It.IsAny<ExtractionRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ExtractionServiceResult(false, new List<ExtractedFieldResult>(), "AI service unavailable"));
 
         _extractionJobRepoMock
-            .Setup(x => x.GetLatestByDocumentIdAsync(documentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ExtractionJob?)null);
+            .Setup(x => x.GetLatestByDocumentIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((DocuFlow.Domain.Entities.ExtractionJob?)null);
 
         // Act
-        var act = async () => await _service.ProcessAsync(documentId, tenantId);
+        var act = async () => await _service.ProcessAsync(document.Id, tenantId);
 
-        // Assert — service rethrows so Hangfire can retry
+        // Assert
         await act.Should().ThrowAsync<Exception>().WithMessage("AI service unavailable");
         document.Status.Should().Be(DocumentStatus.Failed);
     }

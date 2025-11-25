@@ -11,7 +11,7 @@ namespace DocuFlow.IntegrationTests;
 public class TestAppDbContext : AppDbContext
 {
     public TestAppDbContext(DbContextOptions<AppDbContext> options)
-        : base(options, Guid.Empty) { }
+        : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,7 +42,7 @@ public class DocuFlowWebApplicationFactory : WebApplicationFactory<Program>
             services.AddScoped<AppDbContext>(sp =>
             {
                 var options = new DbContextOptionsBuilder<AppDbContext>()
-                    .UseInMemoryDatabase("DocuFlowTestDb")
+                    .UseInMemoryDatabase(Guid.NewGuid().ToString())
                     .Options;
                 return new TestAppDbContext(options);
             });

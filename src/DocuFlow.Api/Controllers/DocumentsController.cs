@@ -48,8 +48,28 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("upload")]
-    public async Task<IActionResult> Upload([FromForm] UploadDocumentCommand command, CancellationToken ct)
+    public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string schema, CancellationToken ct)
     {
+        var tenantId = _currentTenantService.TenantId;
+        if (!tenantId.HasValue)
+            return Unauthorized();
+
+        if (!Guid.TryParse(User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var userId))
+            return Unauthorized();
+
+        if (!Enum.TryParse<DocuFlow.Domain.Enums.ExtractionSchema>(schema, true, out var extractionSchema))
+            extractionSchema = DocuFlow.Domain.Enums.ExtractionSchema.Invoice;
+
+        var command = new UploadDocumentCommand(
+            tenantId.Value,
+            userId,
+            file.FileName,
+            file.ContentType,
+            file.Length,
+            file.OpenReadStream(),
+            extractionSchema
+        );
+
         var result = await _mediator.Send(command, ct);
         if (!result.IsSuccess)
             return BadRequest(new { result.Error });

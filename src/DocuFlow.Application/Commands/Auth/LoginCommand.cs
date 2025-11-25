@@ -6,6 +6,5 @@ namespace DocuFlow.Application.Commands.Auth;
 
 public record LoginCommand(
     string Email,
-    string Password,
-    string TenantSlug
+    string Password
 ) : IRequest<Result<AuthDto>>;

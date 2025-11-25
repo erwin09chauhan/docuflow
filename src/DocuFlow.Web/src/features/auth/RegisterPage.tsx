@@ -6,7 +6,8 @@ import { useAuth } from "./AuthContext";
 import { register as registerUser } from "../../api/auth";
 
 const schema = z.object({
-  fullName: z.string().min(2, "Full name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   tenantName: z.string().min(2, "Organisation name is required"),
@@ -30,7 +31,8 @@ const RegisterPage = () => {
       const response = await registerUser(
         data.email,
         data.password,
-        data.fullName,
+        data.firstName,
+        data.lastName,
         data.tenantName,
       );
       setUser(response.user);
@@ -51,21 +53,39 @@ const RegisterPage = () => {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
-            <input
-              {...register("fullName")}
-              type="text"
-              placeholder="Arvind Chauhan"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.fullName && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.fullName.message}
-              </p>
-            )}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                First Name
+              </label>
+              <input
+                {...register("firstName")}
+                type="text"
+                placeholder="Arvind"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.firstName && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.firstName.message}
+                </p>
+              )}
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name
+              </label>
+              <input
+                {...register("lastName")}
+                type="text"
+                placeholder="Chauhan"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.lastName && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.lastName.message}
+                </p>
+              )}
+            </div>
           </div>
 
           <div>

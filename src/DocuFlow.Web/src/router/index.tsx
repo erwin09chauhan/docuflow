@@ -1,10 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 import LoginPage from "../features/auth/LoginPage";
 import RegisterPage from "../features/auth/RegisterPage";
-import DashboardPage from "../features/dashboard/DashboardPage";
+import ProtectedRoute from "../components/ProtectedRoute";
+import DashboardPage from "../features/dashboard/DashBoardPage";
 import DocumentsPage from "../features/documents/DocumentsPage";
 import DocumentDetailPage from "../features/documents/DocumentDetailPage";
-import ProtectedRoute from "../components/ProtectedRoute";
 
 const router = createBrowserRouter([
   {

@@ -91,7 +91,7 @@ const DashboardPage = () => {
                     {doc.fileName}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(doc.uploadedAt).toLocaleDateString()}
+                    {new Date(doc.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 <span

@@ -64,7 +64,7 @@ const DocumentDetailPage = () => {
               {doc.fileName}
             </h1>
             <p className="text-sm text-gray-400 mt-1">
-              Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
+              Uploaded {new Date(doc.createdAt).toLocaleDateString()}
             </p>
           </div>
           <span
@@ -88,7 +88,7 @@ const DocumentDetailPage = () => {
               File Size
             </p>
             <p className="text-sm font-medium text-gray-900 mt-1">
-              {(doc.fileSize / 1024).toFixed(1)} KB
+              {(doc.sizeBytes / 1024).toFixed(1)} KB
             </p>
           </div>
           <div>

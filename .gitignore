@@ -490,3 +490,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local environment and security
+src/DocuFlow.Api/DataProtection-Keys/
+src/DocuFlow.Api/uploads/
+src/DocuFlow.Infrastructure/Migrations/

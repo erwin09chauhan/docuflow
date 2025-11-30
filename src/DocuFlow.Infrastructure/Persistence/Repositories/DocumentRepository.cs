@@ -33,12 +33,15 @@ public class DocumentRepository : IDocumentRepository
     }
 
     public async Task AddAsync(Document document, CancellationToken cancellationToken = default)
-        => await _context.Documents.AddAsync(document, cancellationToken);
+    {
+        await _context.Documents.AddAsync(document, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 
-    public Task UpdateAsync(Document document, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Document document, CancellationToken cancellationToken = default)
     {
         _context.Documents.Update(document);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -48,6 +51,9 @@ public class DocumentRepository : IDocumentRepository
     {
         var document = await _context.Documents.FindAsync(new object[] { id }, cancellationToken);
         if (document is not null)
+        {
             _context.Documents.Remove(document);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

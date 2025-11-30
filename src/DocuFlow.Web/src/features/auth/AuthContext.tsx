@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { User } from "../../types";
 import { setAccessToken } from "../../lib/axios";
@@ -12,8 +12,31 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const USER_KEY = "docuflow_user";
+const TOKEN_KEY = "docuflow_token";
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(() => {
+    const stored = localStorage.getItem(USER_KEY);
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    if (storedToken) {
+      setAccessToken(storedToken);
+    }
+  }, []);
+
+  const setUser = (user: User | null) => {
+    setUserState(user);
+    if (user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  };
 
   const signOut = () => {
     setUser(null);

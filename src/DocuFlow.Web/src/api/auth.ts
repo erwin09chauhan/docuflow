@@ -16,14 +16,16 @@ export const login = async (
 export const register = async (
   email: string,
   password: string,
-  fullName: string,
+  firstName: string,
+  lastName: string,
   tenantName: string,
 ): Promise<AuthResponse> => {
   const response = await apiClient.post<AuthResponse>("/auth/register", {
     email,
     password,
-    fullName,
-    tenantName,
+    firstName,
+    lastName,
+    tenantSlug: tenantName.toLowerCase().replace(/\s+/g, "-"),
   });
   setAccessToken(response.data.accessToken);
   return response.data;

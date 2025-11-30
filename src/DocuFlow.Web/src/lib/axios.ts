@@ -12,6 +12,11 @@ let accessToken: string | null = null;
 
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
+  if (token) {
+    localStorage.setItem("docuflow_token", token);
+  } else {
+    localStorage.removeItem("docuflow_token");
+  }
 };
 
 export const getAccessToken = () => accessToken;

@@ -52,13 +52,24 @@ public class Document : AuditableEntity
 
     public void UpdateStatus(DocumentStatus newStatus)
     {
-        var validTransitions = new Dictionary<DocumentStatus, List<DocumentStatus>>
+        // Failed can be reached from any state (background job error handling)
+        if (newStatus == DocumentStatus.Failed)
         {
-            { DocumentStatus.Uploaded, new List<DocumentStatus> { DocumentStatus.Queued } },
-            { DocumentStatus.Queued, new List<DocumentStatus> { DocumentStatus.Processing } },
-            { DocumentStatus.Processing, new List<DocumentStatus> { DocumentStatus.Completed, DocumentStatus.Failed } },
-            { DocumentStatus.Failed, new List<DocumentStatus> { DocumentStatus.Queued } }
-        };
+            Status = DocumentStatus.Failed;
+            return;
+        }
+
+        // Idempotency — already in target state, do nothing
+        if (Status == newStatus)
+            return;
+
+        var validTransitions = new Dictionary<DocumentStatus, List<DocumentStatus>>
+    {
+        { DocumentStatus.Uploaded, new List<DocumentStatus> { DocumentStatus.Queued } },
+        { DocumentStatus.Queued,   new List<DocumentStatus> { DocumentStatus.Processing } },
+        { DocumentStatus.Processing, new List<DocumentStatus> { DocumentStatus.Completed } },
+        { DocumentStatus.Failed,   new List<DocumentStatus> { DocumentStatus.Queued } }
+    };
 
         if (!validTransitions.ContainsKey(Status) || !validTransitions[Status].Contains(newStatus))
             throw new InvalidOperationException($"Invalid status transition from {Status} to {newStatus}");

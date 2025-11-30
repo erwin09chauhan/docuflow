@@ -41,11 +41,14 @@ public class ExtractionJobRepository : IExtractionJobRepository
             .ToListAsync(cancellationToken);
 
     public async Task AddAsync(ExtractionJob job, CancellationToken cancellationToken = default)
-        => await _context.ExtractionJobs.AddAsync(job, cancellationToken);
+    {
+        await _context.ExtractionJobs.AddAsync(job, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 
-    public Task UpdateAsync(ExtractionJob job, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(ExtractionJob job, CancellationToken cancellationToken = default)
     {
         _context.ExtractionJobs.Update(job);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

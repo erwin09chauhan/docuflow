@@ -80,16 +80,22 @@ public class DocumentProcessingService : IDocumentProcessingService
             if (!extractionResult.Success)
                 throw new Exception(extractionResult.ErrorMessage);
 
-            // Step 7 — Mark job completed
+            // Step 7 — Save extracted fields
+            var extractedFields = extractionResult.Fields
+                .Select(f => ExtractedField.Create(job.Id, f.FieldName, f.FieldValue, (decimal)f.ConfidenceScore))
+                .ToList();
+            await _extractionJobRepository.AddExtractedFieldsAsync(extractedFields, cancellationToken);
+
+            // Step 8 — Mark job completed
             job.MarkCompleted();
             await _extractionJobRepository.UpdateAsync(job, cancellationToken);
 
-            // Step 8 — Update document status via atomic SQL (no tracking conflict)
+            // Step 9 — Update document status
             await _documentRepository.UpdateStatusAsync(documentId, DocumentStatus.Completed, cancellationToken);
 
-            // Step 9 — Dispatch domain event
+            // Step 10 — Dispatch domain event
             await _publisher.Publish(
-                new ExtractionCompletedEvent(documentId, tenantId, extractionResult.Fields.Count),
+                new ExtractionCompletedEvent(documentId, tenantId, extractedFields.Count),
                 cancellationToken);
 
             _logger.LogInformation("Document {DocumentId} processed successfully", documentId);

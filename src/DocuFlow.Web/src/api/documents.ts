@@ -37,7 +37,7 @@ export const getExtractedFields = async (
   documentId: string,
 ): Promise<ExtractedField[]> => {
   const response = await apiClient.get<ExtractedField[]>(
-    `/extractions/${documentId}/fields`,
+    `/extractions/document/${documentId}`,
   );
   return response.data;
 };

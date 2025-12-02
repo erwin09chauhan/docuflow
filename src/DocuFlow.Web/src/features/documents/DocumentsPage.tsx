@@ -156,7 +156,7 @@ const DocumentsPage = () => {
                       {doc.schema}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(doc.uploadedAt).toLocaleDateString()}
+                      {new Date(doc.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <span

@@ -14,10 +14,10 @@ export interface AuthResponse {
 export interface Document {
   id: string;
   fileName: string;
-  fileSize: number;
-  status: "Pending" | "Processing" | "Completed" | "Failed";
+  sizeBytes: number;
+  status: "Uploaded" | "Queued" | "Processing" | "Completed" | "Failed";
   schema: string;
-  uploadedAt: string;
+  createdAt: string;
   processedAt?: string;
   tenantId: string;
 }

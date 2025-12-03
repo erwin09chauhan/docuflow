@@ -69,6 +69,9 @@ public static class DependencyInjection
             case "AzureOpenAI":
                 services.AddHttpClient<IAiExtractionService, AzureOpenAiExtractionService>();
                 break;
+            case "Groq":
+                services.AddHttpClient<IAiExtractionService, GroqExtractionService>();
+                break;
             default:
                 services.AddScoped<IAiExtractionService, MockAiExtractionService>();
                 break;

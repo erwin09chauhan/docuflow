@@ -40,47 +40,54 @@ public class DocumentProcessingService : IDocumentProcessingService
     {
         _logger.LogInformation("Starting processing for document {DocumentId}", documentId);
 
-        // Step 1 — Fetch document
-        var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken);
-        if (document is null)
+        // Step 1 — Transition to Queued
+        await _documentRepository.UpdateStatusAsync(documentId, DocumentStatus.Queued, cancellationToken);
+
+        // Step 2 — Transition to Processing
+        await _documentRepository.UpdateStatusAsync(documentId, DocumentStatus.Processing, cancellationToken);
+
+        // Step 3 — Fetch job
+        var job = await _extractionJobRepository.GetLatestByDocumentIdAsync(documentId, cancellationToken);
+        if (job is null)
         {
-            _logger.LogError("Document {DocumentId} not found", documentId);
+            _logger.LogError("No extraction job found for document {DocumentId}", documentId);
+            await _documentRepository.UpdateStatusAsync(documentId, DocumentStatus.Failed, cancellationToken);
             return;
         }
 
-        // Step 2 — Update status to Processing
-        document.UpdateStatus(DocumentStatus.Processing);
-        await _documentRepository.UpdateAsync(document, cancellationToken);
-
-        ExtractionJob? job = null;
+        job.MarkProcessing();
+        await _extractionJobRepository.UpdateAsync(job, cancellationToken);
 
         try
         {
-            // Step 3 — Download file from blob storage
+            // Step 4 — Fetch document for file path and schema
+            var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken);
+            if (document is null)
+            {
+                _logger.LogError("Document {DocumentId} not found", documentId);
+                return;
+            }
+
+            // Step 5 — Download file
             var fileStream = await _fileStorageService.DownloadAsync(document.FilePath, cancellationToken);
             using var reader = new StreamReader(fileStream);
             var fileContent = await reader.ReadToEndAsync(cancellationToken);
 
-            // Step 4 — Call AI extraction
+            // Step 6 — Call AI extraction
             var request = new ExtractionRequest(fileContent, document.Schema, document.TenantInstructions);
             var extractionResult = await _aiExtractionService.ExtractAsync(request, cancellationToken);
 
             if (!extractionResult.Success)
                 throw new Exception(extractionResult.ErrorMessage);
 
-            // Step 5 — Fetch extraction job and mark completed
-            job = await _extractionJobRepository.GetLatestByDocumentIdAsync(documentId, cancellationToken);
-            if (job is not null)
-            {
-                job.MarkCompleted();
-                await _extractionJobRepository.UpdateAsync(job, cancellationToken);
-            }
+            // Step 7 — Mark job completed
+            job.MarkCompleted();
+            await _extractionJobRepository.UpdateAsync(job, cancellationToken);
 
-            // Step 6 — Update document status to Completed
-            document.UpdateStatus(DocumentStatus.Completed);
-            await _documentRepository.UpdateAsync(document, cancellationToken);
+            // Step 8 — Update document status via atomic SQL (no tracking conflict)
+            await _documentRepository.UpdateStatusAsync(documentId, DocumentStatus.Completed, cancellationToken);
 
-            // Step 7 — Dispatch domain event
+            // Step 9 — Dispatch domain event
             await _publisher.Publish(
                 new ExtractionCompletedEvent(documentId, tenantId, extractionResult.Fields.Count),
                 cancellationToken);
@@ -91,14 +98,16 @@ public class DocumentProcessingService : IDocumentProcessingService
         {
             _logger.LogError(ex, "Processing failed for document {DocumentId}", documentId);
 
-            document.UpdateStatus(DocumentStatus.Failed);
-            await _documentRepository.UpdateAsync(document, cancellationToken);
+            job.MarkFailed(ex.Message);
+            await _extractionJobRepository.UpdateAsync(job, cancellationToken);
+
+            await _documentRepository.UpdateStatusAsync(documentId, DocumentStatus.Failed, cancellationToken);
 
             await _publisher.Publish(
-                new ExtractionFailedEvent(documentId, tenantId, ex.Message, job?.AttemptCount ?? 1),
+                new ExtractionFailedEvent(documentId, tenantId, ex.Message, job.AttemptCount),
                 cancellationToken);
 
-            throw; // rethrow so Hangfire knows to retry
+            throw;
         }
     }
 }

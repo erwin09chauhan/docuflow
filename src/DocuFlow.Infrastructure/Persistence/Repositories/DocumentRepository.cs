@@ -56,4 +56,18 @@ public class DocumentRepository : IDocumentRepository
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
+
+    public async Task UpdateStatusAsync(Guid id, DocumentStatus status, CancellationToken cancellationToken = default)
+    {
+        await _context.Documents
+            .Where(d => d.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Status, status), cancellationToken);
+
+        if (status == DocumentStatus.Completed)
+        {
+            await _context.Documents
+                .Where(d => d.Id == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.ProcessedAt, DateTime.UtcNow), cancellationToken);
+        }
+    }
 }

@@ -23,6 +23,7 @@ const DocumentsPage = () => {
   const [dragOver, setDragOver] = useState(false);
   const [schema, setSchema] = useState("Invoice");
   const queryClient = useQueryClient();
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["documents", page, 10],
@@ -33,12 +34,21 @@ const DocumentsPage = () => {
   const totalPages = data?.totalPages ?? 1;
 
   const handleUpload = async (file: File) => {
+    setUploadError(null);
     setUploading(true);
     try {
       await uploadDocument(file, schema);
       queryClient.invalidateQueries({ queryKey: ["documents"] });
-    } catch {
-      alert("Upload failed. Please try again.");
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
+      const message =
+        error?.response?.data?.error ??
+        error?.message ??
+        "Upload failed. Please try again.";
+      setUploadError(message);
     } finally {
       setUploading(false);
     }
@@ -106,15 +116,20 @@ const DocumentsPage = () => {
                   type="file"
                   className="hidden"
                   onChange={handleFileInput}
-                  accept=".pdf,.png,.jpg,.jpeg"
+                  accept=".pdf,.txt,.csv,.xlsx,.xls"
                 />
               </label>
               <p className="text-xs text-gray-400 mt-2">
-                PDF, PNG, JPG up to 10MB
+                PDF, TXT, CSV, Excel up to 5MB
               </p>
             </>
           )}
         </div>
+        {uploadError && (
+          <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+            {uploadError}
+          </p>
+        )}
       </div>
 
       {/* Documents Table */}

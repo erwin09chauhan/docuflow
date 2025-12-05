@@ -23,6 +23,11 @@ const DocumentDetailPage = () => {
     queryKey: ["document", id],
     queryFn: () => getDocumentById(id!),
     enabled: !!id,
+    refetchInterval: (query) =>
+      query.state.data?.status === "Completed" ||
+      query.state.data?.status === "Failed"
+        ? false
+        : 3000,
   });
 
   const { data: fields, isLoading: fieldsLoading } = useQuery({
@@ -88,7 +93,11 @@ const DocumentDetailPage = () => {
               File Size
             </p>
             <p className="text-sm font-medium text-gray-900 mt-1">
-              {(doc.sizeBytes / 1024).toFixed(1)} KB
+              {doc.sizeBytes < 1024
+                ? `${doc.sizeBytes} B`
+                : doc.sizeBytes < 1024 * 1024
+                  ? `${(doc.sizeBytes / 1024).toFixed(1)} KB`
+                  : `${(doc.sizeBytes / (1024 * 1024)).toFixed(1)} MB`}
             </p>
           </div>
           <div>

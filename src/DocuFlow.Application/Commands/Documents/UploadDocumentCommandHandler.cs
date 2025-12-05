@@ -28,6 +28,10 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 
     public async Task<Result<DocumentDto>> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
     {
+        const long maxFileSizeBytes = 5 * 1024 * 1024; // 5MB
+        if (request.FileStream.Length > maxFileSizeBytes)
+            return Result<DocumentDto>.Failure("File size exceeds the 5MB limit.");
+
         var uploadResult = await _fileStorageService.UploadAsync(
             request.FileStream,
             request.FileName,
@@ -45,11 +49,9 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 
         await _documentRepository.AddAsync(document, cancellationToken);
 
-        // Create the extraction job immediately after document is saved
         var job = ExtractionJob.Create(document.Id, request.TenantId, request.Schema);
         await _extractionJobRepository.AddAsync(job, cancellationToken);
 
-        // Queue background job
         _backgroundJobService.Enqueue(document.Id, request.TenantId);
 
         var dto = new DocumentDto(

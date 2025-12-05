@@ -51,4 +51,10 @@ public class ExtractionJobRepository : IExtractionJobRepository
         _context.ExtractionJobs.Update(job);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task AddExtractedFieldsAsync(List<ExtractedField> fields, CancellationToken cancellationToken = default)
+    {
+        await _context.ExtractedFields.AddRangeAsync(fields, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

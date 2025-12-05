@@ -8,4 +8,5 @@ public interface IExtractionJobRepository
     Task<List<ExtractionJob>> GetByDocumentIdAsync(Guid documentId, CancellationToken cancellationToken = default);
     Task AddAsync(ExtractionJob job, CancellationToken cancellationToken = default);
     Task UpdateAsync(ExtractionJob job, CancellationToken cancellationToken = default);
+    Task AddExtractedFieldsAsync(List<ExtractedField> fields, CancellationToken cancellationToken = default);
 }

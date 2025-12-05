@@ -149,11 +149,11 @@ const DocumentDetailPage = () => {
                       <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-24">
                         <div
                           className="bg-blue-500 h-1.5 rounded-full"
-                          style={{ width: `${field.confidence * 100}%` }}
+                          style={{ width: `${field.confidenceScore * 100}%` }}
                         />
                       </div>
                       <span className="text-xs text-gray-500">
-                        {(field.confidence * 100).toFixed(0)}%
+                        {(field.confidenceScore * 100).toFixed(0)}%
                       </span>
                     </div>
                   </td>

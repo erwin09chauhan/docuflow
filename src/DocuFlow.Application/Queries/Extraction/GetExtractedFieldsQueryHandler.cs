@@ -21,11 +21,14 @@ public class GetExtractedFieldsQueryHandler : IRequestHandler<GetExtractedFields
         if (document is null || document.TenantId != request.TenantId)
             return Result<List<ExtractedFieldDto>>.Failure("Document not found.");
 
-        var dtos = document.ExtractedFields.Select(f => new ExtractedFieldDto(
-            f.Id,
-            f.FieldName,
-            f.FieldValue,
-            f.ConfidenceScore)).ToList();
+        var dtos = document.ExtractionJobs
+            .SelectMany(j => j.ExtractedFields)
+            .Select(f => new ExtractedFieldDto(
+                f.Id,
+                f.FieldName,
+                f.FieldValue,
+                f.ConfidenceScore))
+            .ToList();
 
         return Result<List<ExtractedFieldDto>>.Success(dtos);
     }

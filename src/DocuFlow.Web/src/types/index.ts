@@ -26,7 +26,7 @@ export interface ExtractedField {
   id: string;
   fieldName: string;
   fieldValue: string;
-  confidence: number;
+  confidenceScore: number;
   documentId: string;
 }
 

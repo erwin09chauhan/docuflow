@@ -18,6 +18,7 @@ public class DocumentRepository : IDocumentRepository
     public async Task<Document?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.Documents
             .Include(d => d.ExtractionJobs)
+                .ThenInclude(j => j.ExtractedFields)
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
     public async Task<PaginatedList<Document>> GetByTenantAsync(Guid tenantId, int page, int pageSize, CancellationToken cancellationToken = default)

@@ -68,10 +68,23 @@ public class DocumentProcessingService : IDocumentProcessingService
                 return;
             }
 
-            // Step 5 — Download file
+            // Step 5 — Extract text from file
             var fileStream = await _fileStorageService.DownloadAsync(document.FilePath, cancellationToken);
-            using var reader = new StreamReader(fileStream);
-            var fileContent = await reader.ReadToEndAsync(cancellationToken);
+            string fileContent;
+
+            if (document.MimeType == "application/pdf")
+            {
+                using var pdfDocument = UglyToad.PdfPig.PdfDocument.Open(fileStream);
+                var textBuilder = new System.Text.StringBuilder();
+                foreach (var page in pdfDocument.GetPages())
+                    textBuilder.AppendLine(string.Join(" ", page.GetWords().Select(w => w.Text)));
+                fileContent = textBuilder.ToString();
+            }
+            else
+            {
+                using var reader = new StreamReader(fileStream);
+                fileContent = await reader.ReadToEndAsync(cancellationToken);
+            }
 
             // Step 6 — Call AI extraction
             var request = new ExtractionRequest(fileContent, document.Schema, document.TenantInstructions);

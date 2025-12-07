@@ -19,7 +19,7 @@ public class DocumentBuilder
     public DocumentBuilder WithFilePath(string filePath) { _filePath = filePath; return this; }
     public DocumentBuilder WithSchema(ExtractionSchema schema) { _schema = schema; return this; }
     public DocumentBuilder WithStatus(DocumentStatus status) { _status = status; return this; }
-
+    public DocumentBuilder WithMimeType(string mimeType) { _mimeType = mimeType; return this; }
     public Document Build()
     {
         var document = Document.Create(_tenantId, _uploadedById, _fileName, _filePath, _fileSizeBytes, _mimeType, _schema);

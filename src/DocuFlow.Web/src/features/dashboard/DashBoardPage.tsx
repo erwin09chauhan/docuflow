@@ -29,31 +29,40 @@ const DashboardPage = () => {
   const failed = docs.filter((d) => d.status === "Failed").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Welcome */}
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">
           Welcome back, {user?.fullName?.split(" ")[0]}
         </h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-600 text-md mt-1">
           Here's what's happening with your documents
         </p>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-sm text-gray-500">Total Documents</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{total}</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+            Total Documents
+          </p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{total}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-sm text-gray-500">Completed</p>
-          <p className="text-3xl font-bold text-green-600 mt-1">{completed}</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
+          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+            Completed
+          </p>
+          <p className="text-3xl font-bold text-green-600 mt-2">{completed}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-sm text-gray-500">Failed</p>
-          <p className="text-3xl font-bold text-red-500 mt-1">{failed}</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-400">
+          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+            Failed
+          </p>
+          <p className="text-3xl font-bold text-red-500 mt-2">{failed}</p>
         </div>
       </div>
 
+      {/* Recent documents */}
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900">
@@ -68,11 +77,11 @@ const DashboardPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="px-6 py-8 text-sm text-gray-400 text-center">
+          <div className="px-6 py-10 text-sm text-gray-400 text-center">
             Loading...
           </div>
         ) : docs.length === 0 ? (
-          <div className="px-6 py-8 text-sm text-gray-400 text-center">
+          <div className="px-6 py-10 text-sm text-gray-400 text-center">
             No documents yet.{" "}
             <Link to="/documents" className="text-blue-600 hover:underline">
               Upload your first document
@@ -84,15 +93,32 @@ const DashboardPage = () => {
               <Link
                 key={doc.id}
                 to={`/documents/${doc.id}`}
-                className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors"
               >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {doc.fileName}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(doc.createdAt).toLocaleDateString()}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-4 h-4 text-blue-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {doc.fileName}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      {new Date(doc.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
                 <span
                   className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColor(doc.status)}`}

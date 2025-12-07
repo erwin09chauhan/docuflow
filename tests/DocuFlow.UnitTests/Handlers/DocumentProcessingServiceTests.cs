@@ -70,6 +70,9 @@ public class DocumentProcessingServiceTests
         var document = new DocumentBuilder()
             .WithTenantId(tenantId)
             .WithStatus(DocumentStatus.Queued)
+            .WithFileName("invoice.txt")
+            .WithFilePath("uploads/invoice.txt")
+            .WithMimeType("text/plain")
             .Build();
 
         var job = new ExtractionJobBuilder()
@@ -85,6 +88,10 @@ public class DocumentProcessingServiceTests
             .Setup(x => x.UpdateAsync(It.IsAny<DocuFlow.Domain.Entities.Document>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        _documentRepoMock
+            .Setup(x => x.UpdateStatusAsync(It.IsAny<Guid>(), It.IsAny<DocumentStatus>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         _fileStorageMock
             .Setup(x => x.DownloadAsync(document.FilePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemoryStream(System.Text.Encoding.UTF8.GetBytes("file content")));
@@ -93,7 +100,7 @@ public class DocumentProcessingServiceTests
             .Setup(x => x.ExtractAsync(It.IsAny<ExtractionRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ExtractionServiceResult(true, new List<ExtractedFieldResult>
             {
-                new ExtractedFieldResult("InvoiceNumber", "INV-001", 0.99)
+            new ExtractedFieldResult("InvoiceNumber", "INV-001", 0.99)
             }));
 
         _extractionJobRepoMock
@@ -104,12 +111,20 @@ public class DocumentProcessingServiceTests
             .Setup(x => x.UpdateAsync(It.IsAny<DocuFlow.Domain.Entities.ExtractionJob>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        _extractionJobRepoMock
+            .Setup(x => x.AddExtractedFieldsAsync(It.IsAny<List<DocuFlow.Domain.Entities.ExtractedField>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         await _service.ProcessAsync(document.Id, tenantId);
 
         // Assert
-        document.Status.Should().Be(DocumentStatus.Completed);
-        _publisherMock.Verify(x => x.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()), Times.Once);
+        _documentRepoMock.Verify(
+            x => x.UpdateStatusAsync(document.Id, DocumentStatus.Completed, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _publisherMock.Verify(
+            x => x.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -121,6 +136,9 @@ public class DocumentProcessingServiceTests
         var document = new DocumentBuilder()
             .WithTenantId(tenantId)
             .WithStatus(DocumentStatus.Queued)
+            .WithFileName("invoice.txt")
+            .WithFilePath("uploads/invoice.txt")
+            .WithMimeType("text/plain")
             .Build();
 
         _documentRepoMock
@@ -131,6 +149,10 @@ public class DocumentProcessingServiceTests
             .Setup(x => x.UpdateAsync(It.IsAny<DocuFlow.Domain.Entities.Document>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        _documentRepoMock
+            .Setup(x => x.UpdateStatusAsync(It.IsAny<Guid>(), It.IsAny<DocumentStatus>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         _fileStorageMock
             .Setup(x => x.DownloadAsync(document.FilePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MemoryStream(System.Text.Encoding.UTF8.GetBytes("file content")));
@@ -139,15 +161,26 @@ public class DocumentProcessingServiceTests
             .Setup(x => x.ExtractAsync(It.IsAny<ExtractionRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ExtractionServiceResult(false, new List<ExtractedFieldResult>(), "AI service unavailable"));
 
+        var job = new ExtractionJobBuilder()
+            .WithDocumentId(document.Id)
+            .WithTenantId(tenantId)
+            .Build();
+
         _extractionJobRepoMock
             .Setup(x => x.GetLatestByDocumentIdAsync(document.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((DocuFlow.Domain.Entities.ExtractionJob?)null);
+            .ReturnsAsync(job);
+
+        _extractionJobRepoMock
+            .Setup(x => x.UpdateAsync(It.IsAny<DocuFlow.Domain.Entities.ExtractionJob>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         // Act
         var act = async () => await _service.ProcessAsync(document.Id, tenantId);
 
         // Assert
         await act.Should().ThrowAsync<Exception>().WithMessage("AI service unavailable");
-        document.Status.Should().Be(DocumentStatus.Failed);
+        _documentRepoMock.Verify(
+            x => x.UpdateStatusAsync(document.Id, DocumentStatus.Failed, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

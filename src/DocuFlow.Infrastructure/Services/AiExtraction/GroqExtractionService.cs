@@ -39,7 +39,7 @@ public class GroqExtractionService : IAiExtractionService
 
         var payload = new
         {
-            model = "llama-3.3-70b-versatile",
+            model = "llama-3.1-8b-instant",
             messages = new[]
             {
                 new { role = "system", content = "You are a document extraction assistant. Extract fields from documents and return only valid JSON array. No markdown, no explanation, only the JSON array." },
@@ -71,13 +71,18 @@ public class GroqExtractionService : IAiExtractionService
             ? $"Additional instructions: {request.TenantInstructions}"
             : string.Empty;
 
+        // Truncate content to avoid token limit on free tier
+        var content = request.DocumentContent.Length > 2000
+            ? request.DocumentContent[..2000] + "\n[Content truncated]"
+            : request.DocumentContent;
+
         return $"Extract the following fields from this {request.Schema} document.\n" +
                $"{instructions}\n\n" +
                "Return a JSON array in this exact format, no other text, no markdown:\n" +
                "[\n" +
                "  {\"fieldName\": \"FieldName\", \"fieldValue\": \"value\", \"confidenceScore\": 0.95}\n" +
                "]\n\n" +
-               $"Document content:\n{request.DocumentContent}";
+               $"Document content:\n{content}";
     }
 
     private ExtractionServiceResult ParseResponse(string responseJson)
@@ -96,6 +101,16 @@ public class GroqExtractionService : IAiExtractionService
                 .Replace("```json", "")
                 .Replace("```", "")
                 .Trim();
+
+            // If JSON array is truncated, close it
+            if (clean.StartsWith("[") && !clean.EndsWith("]"))
+            {
+                var lastComplete = clean.LastIndexOf('}');
+                if (lastComplete >= 0)
+                    clean = clean[..(lastComplete + 1)] + "]";
+                else
+                    clean = "[]";
+            }
 
             var fields = JsonSerializer.Deserialize<List<ExtractedFieldResult>>(
                 clean,

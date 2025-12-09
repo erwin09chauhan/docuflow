@@ -5,6 +5,7 @@ using DocuFlow.Domain.Enums;
 using DocuFlow.Domain.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ExcelDataReader;
 
 namespace DocuFlow.Infrastructure.Services;
 
@@ -78,6 +79,22 @@ public class DocumentProcessingService : IDocumentProcessingService
                 var textBuilder = new System.Text.StringBuilder();
                 foreach (var page in pdfDocument.GetPages())
                     textBuilder.AppendLine(string.Join(" ", page.GetWords().Select(w => w.Text)));
+                fileContent = textBuilder.ToString();
+            }
+            else if (document.MimeType is "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                or "application/vnd.ms-excel")
+            {
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                using var reader = ExcelDataReader.ExcelReaderFactory.CreateReader(fileStream);
+                var dataSet = reader.AsDataSet();
+                var textBuilder = new System.Text.StringBuilder();
+                foreach (System.Data.DataTable table in dataSet.Tables)
+                {
+                    foreach (System.Data.DataRow row in table.Rows)
+                    {
+                        textBuilder.AppendLine(string.Join("\t", row.ItemArray.Select(cell => cell?.ToString() ?? "")));
+                    }
+                }
                 fileContent = textBuilder.ToString();
             }
             else

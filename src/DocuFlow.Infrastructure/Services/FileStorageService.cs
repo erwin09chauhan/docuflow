@@ -22,11 +22,13 @@ public class FileStorageService : IFileStorageService
         var uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
         var filePath = Path.Combine(_basePath, uniqueFileName);
 
-        await using var fileOutput = File.Create(filePath);
-        await fileStream.CopyToAsync(fileOutput, cancellationToken);
+        await using (var fileOutput = File.Create(filePath))
+        {
+            await fileStream.CopyToAsync(fileOutput, cancellationToken);
+            await fileOutput.FlushAsync(cancellationToken);
+        }
 
         var sizeBytes = new FileInfo(filePath).Length;
-
         return new FileUploadResult(filePath, uniqueFileName, sizeBytes);
     }
 
@@ -41,7 +43,6 @@ public class FileStorageService : IFileStorageService
         await using var fileStream = File.OpenRead(filePath);
         await fileStream.CopyToAsync(memoryStream, cancellationToken);
         memoryStream.Position = 0;
-
         return memoryStream;
     }
 

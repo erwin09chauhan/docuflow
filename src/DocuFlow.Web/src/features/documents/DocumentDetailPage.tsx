@@ -25,7 +25,11 @@ const DocumentDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: doc, isLoading: docLoading } = useQuery({
+  const {
+    data: doc,
+    isLoading: docLoading,
+    isError: docError,
+  } = useQuery({
     queryKey: ["document", id],
     queryFn: () => getDocumentById(id!),
     enabled: !!id,
@@ -46,6 +50,19 @@ const DocumentDetailPage = () => {
     return (
       <div className="flex items-center justify-center py-16">
         <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (docError) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-sm font-medium text-red-600">
+          Unable to connect to the server.
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          Make sure the API is running and try again.
+        </p>
       </div>
     );
   }

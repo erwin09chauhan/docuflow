@@ -1,16 +1,19 @@
-﻿using DocuFlow.Application.Abstractions.Services;
+﻿using Amazon.S3;
+using Amazon.S3.Model;
+using DocuFlow.Application.Abstractions.Services;
 using Microsoft.Extensions.Configuration;
 
 namespace DocuFlow.Infrastructure.Services;
 
 public class FileStorageService : IFileStorageService
 {
-    private readonly string _basePath;
+    private readonly IAmazonS3 _s3Client;
+    private readonly string _bucketName;
 
-    public FileStorageService(IConfiguration configuration)
+    public FileStorageService(IAmazonS3 s3Client, IConfiguration configuration)
     {
-        _basePath = configuration["FileStorage:BasePath"] ?? "uploads";
-        Directory.CreateDirectory(_basePath);
+        _s3Client = s3Client;
+        _bucketName = configuration["R2:BucketName"] ?? "docuflow-uploads";
     }
 
     public async Task<FileUploadResult> UploadAsync(
@@ -20,39 +23,50 @@ public class FileStorageService : IFileStorageService
         CancellationToken cancellationToken = default)
     {
         var uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
-        var filePath = Path.Combine(_basePath, uniqueFileName);
 
-        await using (var fileOutput = File.Create(filePath))
+        var request = new PutObjectRequest
         {
-            await fileStream.CopyToAsync(fileOutput, cancellationToken);
-            await fileOutput.FlushAsync(cancellationToken);
-        }
+            BucketName = _bucketName,
+            Key = uniqueFileName,
+            InputStream = fileStream,
+            ContentType = contentType,
+            DisablePayloadSigning = true
+        };
 
-        var sizeBytes = new FileInfo(filePath).Length;
-        return new FileUploadResult(filePath, uniqueFileName, sizeBytes);
+        await _s3Client.PutObjectAsync(request, cancellationToken);
+
+        var sizeBytes = fileStream.Length;
+
+        return new FileUploadResult(uniqueFileName, uniqueFileName, sizeBytes);
     }
 
     public async Task<Stream> DownloadAsync(
         string filePath,
         CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"File not found: {filePath}");
+        var request = new GetObjectRequest
+        {
+            BucketName = _bucketName,
+            Key = filePath
+        };
 
+        var response = await _s3Client.GetObjectAsync(request, cancellationToken);
         var memoryStream = new MemoryStream();
-        await using var fileStream = File.OpenRead(filePath);
-        await fileStream.CopyToAsync(memoryStream, cancellationToken);
+        await response.ResponseStream.CopyToAsync(memoryStream, cancellationToken);
         memoryStream.Position = 0;
         return memoryStream;
     }
 
-    public Task DeleteAsync(
+    public async Task DeleteAsync(
         string filePath,
         CancellationToken cancellationToken = default)
     {
-        if (File.Exists(filePath))
-            File.Delete(filePath);
+        var request = new DeleteObjectRequest
+        {
+            BucketName = _bucketName,
+            Key = filePath
+        };
 
-        return Task.CompletedTask;
+        await _s3Client.DeleteObjectAsync(request, cancellationToken);
     }
 }

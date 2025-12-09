@@ -18,7 +18,8 @@ const statusColor = (status: string) => {
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { data, isLoading } = useQuery({
+
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["documents", 1, 5],
     queryFn: () => getDocuments(1, 5),
   });
@@ -79,6 +80,15 @@ const DashboardPage = () => {
         {isLoading ? (
           <div className="px-6 py-10 text-sm text-gray-400 text-center">
             Loading...
+          </div>
+        ) : isError ? (
+          <div className="px-6 py-10 text-center">
+            <p className="text-sm font-medium text-red-600">
+              Unable to connect to the server.
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Make sure the API is running and try again.
+            </p>
           </div>
         ) : docs.length === 0 ? (
           <div className="px-6 py-10 text-sm text-gray-400 text-center">

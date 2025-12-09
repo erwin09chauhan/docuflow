@@ -28,8 +28,16 @@ const LoginPage = () => {
       const response = await login(data.email, data.password);
       setUser(response.user);
       navigate("/");
-    } catch {
-      setError("root", { message: "Invalid email or password" });
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
+      const isNetworkError = !error?.response;
+      const message = isNetworkError
+        ? "Unable to connect to the server. Make sure the API is running."
+        : (error?.response?.data?.error ?? "Invalid email or password.");
+      setError("root", { message });
     }
   };
 

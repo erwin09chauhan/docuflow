@@ -35,3 +35,8 @@ export const logout = async (): Promise<void> => {
   await apiClient.post("/auth/logout");
   setAccessToken(null);
 };
+
+export const getMe = async (): Promise<AuthResponse["user"]> => {
+  const response = await apiClient.get<AuthResponse["user"]>("/auth/me");
+  return response.data;
+};

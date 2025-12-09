@@ -37,8 +37,12 @@ const RegisterPage = () => {
       );
       setUser(response.user);
       navigate("/");
-    } catch {
-      setError("root", { message: "Registration failed. Please try again." });
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      const message =
+        error?.response?.data?.error ??
+        "Unable to connect to the server. Make sure the API is running.";
+      setError("root", { message });
     }
   };
 

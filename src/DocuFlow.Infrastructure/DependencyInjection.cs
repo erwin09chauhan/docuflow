@@ -1,16 +1,18 @@
-﻿using DocuFlow.Application.Abstractions.Repositories;
+﻿using Amazon.Runtime;
+using Amazon.S3;
+using DocuFlow.Application.Abstractions.Repositories;
 using DocuFlow.Application.Abstractions.Services;
 using DocuFlow.Infrastructure.Identity;
 using DocuFlow.Infrastructure.Persistence;
 using DocuFlow.Infrastructure.Persistence.Repositories;
 using DocuFlow.Infrastructure.Services;
+using DocuFlow.Infrastructure.Services.AiExtraction;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Hangfire;
-using Hangfire.PostgreSql;
-using DocuFlow.Infrastructure.Services.AiExtraction;
 
 namespace DocuFlow.Infrastructure;
 
@@ -39,6 +41,19 @@ public static class DependencyInjection
         })
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
+
+        // R2 File Storage (S3-compatible)
+        var r2AccountId = configuration["R2:AccountId"];
+        var r2AccessKey = configuration["R2:AccessKeyId"];
+        var r2SecretKey = configuration["R2:SecretAccessKey"];
+
+        services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(
+            new BasicAWSCredentials(r2AccessKey, r2SecretKey),
+            new AmazonS3Config
+            {
+                ServiceURL = $"https://{r2AccountId}.r2.cloudflarestorage.com",
+                ForcePathStyle = true
+            }));
 
         // Repositories
         services.AddScoped<IDocumentRepository, DocumentRepository>();

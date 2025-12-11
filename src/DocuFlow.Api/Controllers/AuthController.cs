@@ -1,5 +1,7 @@
+using DocuFlow.Application.Abstractions.Repositories;
 using DocuFlow.Application.Abstractions.Services;
 using DocuFlow.Application.Commands.Auth;
+using DocuFlow.Application.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +14,16 @@ public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IAuthService _authService;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IUserRepository _userRepository;
 
-    public AuthController(IMediator mediator, IAuthService authService)
+    public AuthController(IMediator mediator, IAuthService authService, ICurrentUserService currentUserService,
+    IUserRepository userRepository)
     {
         _mediator = mediator;
         _authService = authService;
+        _currentUserService = currentUserService;
+        _userRepository = userRepository;
     }
 
     [HttpPost("register")]
@@ -54,6 +61,26 @@ public class AuthController : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(new { result.Error });
         return NoContent();
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> Me(CancellationToken ct)
+    {
+        var userId = _currentUserService.UserId;
+        if (!userId.HasValue)
+            return Unauthorized();
+
+        var user = await _userRepository.GetByIdAsync(userId.Value, ct);
+        if (user is null)
+            return Unauthorized();
+
+        return Ok(new UserDto(
+            user.Id,
+            user.Email,
+            user.FullName,
+            user.Role,
+            user.CreatedAt));
     }
 }
 

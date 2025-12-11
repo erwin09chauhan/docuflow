@@ -4,7 +4,7 @@ using DocuFlow.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
-using Swashbuckle.AspNetCore.SwaggerUI;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +20,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
+
+// Prevent JWT middleware from remapping claim types
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -49,7 +52,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys")));
 
-// Swagger / Scalar
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
@@ -73,18 +75,19 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/v1.json", "DocuFlow API v1");
     });
 }
+else
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
 app.UseCors("DevCors");
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<AuditMiddleware>();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = new[] { new Hangfire.Dashboard.LocalRequestsOnlyAuthorizationFilter() }

@@ -5,6 +5,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import DashboardPage from "../features/dashboard/DashBoardPage";
 import DocumentsPage from "../features/documents/DocumentsPage";
 import DocumentDetailPage from "../features/documents/DocumentDetailPage";
+import AboutPage from "../features/about/AboutPage";
 
 const router = createBrowserRouter([
   {
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
       {
         path: "documents/:id",
         element: <DocumentDetailPage />,
+      },
+      {
+        path: "about",
+        element: <AboutPage />,
       },
     ],
   },

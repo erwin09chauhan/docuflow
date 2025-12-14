@@ -43,27 +43,43 @@ public class ExtractionCompletedEventHandler : INotificationHandler<ExtractionCo
         if (user is null) return;
 
         // Send email
-        await _emailService.SendAsync(new EmailMessage(
-            user.Email,
-            "Document Processing Complete",
-            $"Your document '{document.FileName}' has been processed successfully. " +
-            $"{notification.ExtractedFieldCount} fields were extracted."),
-            cancellationToken);
+        try
+        {
+            await _emailService.SendAsync(new EmailMessage(
+                user.Email,
+                "Document Processing Complete",
+                $"Your document '{document.FileName}' has been processed successfully. " +
+                $"{notification.ExtractedFieldCount} fields were extracted."),
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send completion email for document {DocumentId} — email not configured",
+                notification.DocumentId);
+        }
 
         // Fire webhook if configured
         var tenant = await _tenantRepository.GetByIdAsync(notification.TenantId, cancellationToken);
         if (tenant?.WebhookUrl is not null)
         {
-            var payload = new
+            try
             {
-                @event = "extraction.completed",
-                documentId = notification.DocumentId,
-                tenantId = notification.TenantId,
-                extractedFieldCount = notification.ExtractedFieldCount,
-                occurredAt = notification.OccurredAt
-            };
+                var payload = new
+                {
+                    @event = "extraction.completed",
+                    documentId = notification.DocumentId,
+                    tenantId = notification.TenantId,
+                    extractedFieldCount = notification.ExtractedFieldCount,
+                    occurredAt = notification.OccurredAt
+                };
 
-            await _webhookService.SendAsync(tenant.WebhookUrl, payload, cancellationToken);
+                await _webhookService.SendAsync(tenant.WebhookUrl, payload, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send webhook for document {DocumentId}",
+                    notification.DocumentId);
+            }
         }
     }
 }

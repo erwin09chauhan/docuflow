@@ -1,5 +1,6 @@
 using DocuFlow.Application.Abstractions.Repositories;
 using DocuFlow.Application.Common;
+using DocuFlow.Application.DTOs;
 using DocuFlow.Domain.Entities;
 using DocuFlow.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -70,5 +71,21 @@ public class DocumentRepository : IDocumentRepository
                 .Where(d => d.Id == id)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.ProcessedAt, DateTime.UtcNow), cancellationToken);
         }
+    }
+
+    public async Task<DocumentStatsDto> GetStatsByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        var docs = await _context.Documents
+            .Where(d => d.TenantId == tenantId)
+            .GroupBy(_ => 1)
+            .Select(g => new DocumentStatsDto(
+                g.Count(),
+                g.Count(d => d.Status == DocumentStatus.Completed),
+                g.Count(d => d.Status == DocumentStatus.Failed),
+                g.Count(d => d.Status == DocumentStatus.Processing)
+            ))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return docs ?? new DocumentStatsDto(0, 0, 0, 0);
     }
 }

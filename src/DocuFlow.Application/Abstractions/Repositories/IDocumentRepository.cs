@@ -1,4 +1,5 @@
 using DocuFlow.Application.Common;
+using DocuFlow.Application.DTOs;
 using DocuFlow.Domain.Enums;
 
 namespace DocuFlow.Application.Abstractions.Repositories;
@@ -11,4 +12,5 @@ public interface IDocumentRepository
     Task UpdateAsync(DocuFlow.Domain.Entities.Document document, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task UpdateStatusAsync(Guid id, DocumentStatus status, CancellationToken cancellationToken = default);
+    Task<DocumentStatsDto> GetStatsByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default);
 }

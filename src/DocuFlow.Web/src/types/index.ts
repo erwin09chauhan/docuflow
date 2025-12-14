@@ -42,3 +42,10 @@ export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
 }
+
+export interface DocumentStats {
+  total: number;
+  completed: number;
+  failed: number;
+  processing: number;
+}

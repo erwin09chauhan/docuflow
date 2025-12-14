@@ -47,6 +47,19 @@ public class DocumentsController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats(CancellationToken ct)
+    {
+        var tenantId = _currentTenantService.TenantId;
+        if (!tenantId.HasValue)
+            return Unauthorized();
+
+        var result = await _mediator.Send(new GetDocumentStatsQuery(tenantId.Value), ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { result.Error });
+        return Ok(result.Value);
+    }
+
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string schema, CancellationToken ct)
     {

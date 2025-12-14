@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDocumentById, getExtractedFields } from "../../api/documents";
 
 const statusColor = (status: string) => {
@@ -25,6 +25,8 @@ const DocumentDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
+
   const {
     data: doc,
     isLoading: docLoading,
@@ -33,11 +35,14 @@ const DocumentDetailPage = () => {
     queryKey: ["document", id],
     queryFn: () => getDocumentById(id!),
     enabled: !!id,
-    refetchInterval: (query) =>
-      query.state.data?.status === "Completed" ||
-      query.state.data?.status === "Failed"
-        ? false
-        : 3000,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === "Completed" || status === "Failed") {
+        queryClient.invalidateQueries({ queryKey: ["documents"] });
+        return false;
+      }
+      return 3000;
+    },
   });
 
   const { data: fields, isLoading: fieldsLoading } = useQuery({

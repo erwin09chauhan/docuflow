@@ -29,6 +29,13 @@ const DocumentsPage = () => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["documents", page, 10],
     queryFn: () => getDocuments(page, 10),
+    refetchInterval: (query) => {
+      const items = query.state.data?.items ?? [];
+      const hasActive = items.some(
+        (d) => d.status !== "Completed" && d.status !== "Failed",
+      );
+      return hasActive ? 5000 : false;
+    },
   });
 
   const docs = data?.items ?? [];
@@ -40,6 +47,7 @@ const DocumentsPage = () => {
     try {
       await uploadDocument(file, schema);
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["documentStats"] });
     } catch (err: unknown) {
       const error = err as {
         response?: { data?: { error?: string } };

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { getDocuments } from "../../api/documents";
+import { getDocuments, getDocumentStats } from "../../api/documents";
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -19,16 +19,28 @@ const statusColor = (status: string) => {
 const DashboardPage = () => {
   const { user } = useAuth();
 
+  const { data: statsData } = useQuery({
+    queryKey: ["documentStats"],
+    queryFn: getDocumentStats,
+    refetchInterval: 5000,
+  });
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["documents", 1, 5],
     queryFn: () => getDocuments(1, 5),
+    refetchInterval: (query) => {
+      const items = query.state.data?.items ?? [];
+      const hasActive = items.some(
+        (d) => d.status !== "Completed" && d.status !== "Failed",
+      );
+      return hasActive ? 5000 : false;
+    },
   });
 
   const docs = data?.items ?? [];
-  const total = data?.totalCount ?? 0;
-  const completed = docs.filter((d) => d.status === "Completed").length;
-  const failed = docs.filter((d) => d.status === "Failed").length;
-
+  const total = statsData?.total ?? 0;
+  const completed = statsData?.completed ?? 0;
+  const failed = statsData?.failed ?? 0;
   return (
     <div className="space-y-8">
       {/* Welcome */}

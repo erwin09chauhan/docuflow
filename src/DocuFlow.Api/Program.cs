@@ -79,10 +79,7 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/openapi/v1.json", "DocuFlow API v1");
     });
 }
-else
-{
-    app.UseHttpsRedirection();
-}
+
 
 app.UseCors("DevCors");
 

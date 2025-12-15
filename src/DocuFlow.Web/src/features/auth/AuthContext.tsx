@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { User } from "../../types";
 import { setAccessToken } from "../../lib/axios";
 import { getMe } from "../../api/auth";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUserState] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const initialized = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (initialized.current) return;
@@ -58,6 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = () => {
     setUser(null);
     setAccessToken(null);
+    queryClient.clear();
   };
 
   return (

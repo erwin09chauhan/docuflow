@@ -58,7 +58,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"]
+            ?.Split(",", StringSplitOptions.RemoveEmptyEntries)
+            ?? ["http://localhost:5173"];
+
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

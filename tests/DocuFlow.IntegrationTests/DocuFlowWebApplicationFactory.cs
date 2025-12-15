@@ -1,4 +1,5 @@
 ﻿using DocuFlow.Infrastructure.Persistence;
+using Hangfire;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -37,6 +38,16 @@ public class DocuFlowWebApplicationFactory : WebApplicationFactory<Program>
                 .ToList();
             foreach (var hs in hostedServices)
                 services.Remove(hs);
+
+            // Remove Hangfire services
+            var hangfireServices = services
+                .Where(d => d.ServiceType.FullName?.Contains("Hangfire") == true)
+                .ToList();
+            foreach (var hs in hangfireServices)
+                services.Remove(hs);
+
+            // Add Hangfire with in-memory storage for tests
+            services.AddHangfire(config => config.UseInMemoryStorage());
 
             // Register in-memory DbContext
             services.AddScoped<AppDbContext>(sp =>

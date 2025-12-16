@@ -41,8 +41,14 @@ const DocumentsPage = () => {
   const docs = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
   const handleUpload = async (file: File) => {
     setUploadError(null);
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError("File size must not exceed 5MB.");
+      return;
+    }
     setUploading(true);
     try {
       await uploadDocument(file, schema);

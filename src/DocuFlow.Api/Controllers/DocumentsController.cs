@@ -61,11 +61,15 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("upload")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
     public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string schema, CancellationToken ct)
     {
         var tenantId = _currentTenantService.TenantId;
         if (!tenantId.HasValue)
             return Unauthorized();
+
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { error = "File size must not exceed 5MB." });
 
         if (!Guid.TryParse(User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var userId))
             return Unauthorized();

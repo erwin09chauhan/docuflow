@@ -1,8 +1,10 @@
 using DocuFlow.Api.Middleware;
 using DocuFlow.Application;
 using DocuFlow.Infrastructure;
+using DocuFlow.Infrastructure.Persistence;
 using Hangfire;
 using Hangfire.Dashboard;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
@@ -72,6 +74,12 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {

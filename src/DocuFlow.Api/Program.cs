@@ -1,6 +1,8 @@
 using DocuFlow.Api.Middleware;
 using DocuFlow.Application;
 using DocuFlow.Infrastructure;
+using Hangfire;
+using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;

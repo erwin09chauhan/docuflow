@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getDocuments, getDocumentStats } from "../../api/documents";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -54,7 +55,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
           <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
             Total Documents
@@ -90,9 +91,7 @@ const DashboardPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="px-6 py-10 text-sm text-gray-400 text-center">
-            Loading...
-          </div>
+          <LoadingSpinner />
         ) : isError ? (
           <div className="px-6 py-10 text-center">
             <p className="text-sm font-medium text-red-600">

@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDocumentById, getExtractedFields } from "../../api/documents";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -52,11 +53,7 @@ const DocumentDetailPage = () => {
   });
 
   if (docLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (docError) {
@@ -136,7 +133,7 @@ const DocumentDetailPage = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
               Schema
@@ -202,6 +199,7 @@ const DocumentDetailPage = () => {
             No fields extracted.
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="text-xs text-gray-500 uppercase tracking-wide border-b border-gray-100">
@@ -239,6 +237,7 @@ const DocumentDetailPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

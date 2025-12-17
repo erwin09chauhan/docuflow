@@ -6,6 +6,7 @@
 # dotenv files
 .env
 .env.local
+render.env
 appsettings.Development.json
 
 # Frontend

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { getDocuments, uploadDocument } from "../../api/documents";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -175,9 +176,7 @@ const DocumentsPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="px-6 py-10 text-sm text-gray-600 text-center">
-            Loading...
-          </div>
+          <LoadingSpinner />
         ) : isError ? (
           <div className="px-6 py-10 text-center">
             <p className="text-sm font-medium text-red-600">
@@ -193,6 +192,7 @@ const DocumentsPage = () => {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-xs text-gray-800 border-b border-gray-100 uppercase tracking-wide">
@@ -248,6 +248,7 @@ const DocumentsPage = () => {
                 ))}
               </tbody>
             </table>
+            </div>
 
             <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
               <p className="text-xs text-gray-600">

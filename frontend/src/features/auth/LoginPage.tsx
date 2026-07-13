@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +16,7 @@ type FormData = z.infer<typeof schema>;
 const LoginPage = () => {
   const { setUser } = useAuth();
   const navigate = useNavigate();
+  const [showSlowMessage, setShowSlowMessage] = useState(false);
 
   const {
     register,
@@ -24,6 +26,7 @@ const LoginPage = () => {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
+    const timer = setTimeout(() => setShowSlowMessage(true), 3000);
     try {
       const response = await login(data.email, data.password);
       setUser(response.user);
@@ -38,6 +41,9 @@ const LoginPage = () => {
         ? "Unable to connect to the server. Make sure the API is running."
         : (error?.response?.data?.error ?? "Invalid email or password.");
       setError("root", { message });
+    } finally {
+      clearTimeout(timer);
+      setShowSlowMessage(false);
     }
   };
 
@@ -163,6 +169,12 @@ const LoginPage = () => {
             >
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
+
+            {isSubmitting && showSlowMessage && (
+              <p className="text-xs text-gray-400 text-center">
+                Waking up the server, this can take up to a minute...
+              </p>
+            )}
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">

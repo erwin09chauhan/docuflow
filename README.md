@@ -1,62 +1,109 @@
-<h1 align="center">DocuFlow</h1>
+# DocuFlow
 
-<p align="center">
-  A multi-tenant document processing app that extracts structured data from invoices, contracts, and spreadsheets using AI.
-</p>
+**Turn documents into structured data.** Upload an invoice, contract, receipt, or spreadsheet and DocuFlow extracts the fields you care about — automatically, in the background, with a confidence score on every value.
 
-<p align="center">
-  <a href="https://docu-flow.pages.dev"><strong>🔗 Live Demo</strong></a> ·
-  <a href="https://docuflow-jvuo.onrender.com/scalar">API Docs</a>
-</p>
+### 🔗 [Try the live demo →](https://docu-flow.pages.dev)
 
-<p align="center">
-  <em>Note: the backend is hosted on Render's free tier and may take 5-10s to wake up on first request.</em>
-</p>
+> **Note:** the demo backend spins down when it's not being used (that's how the free tier keeps costs at zero), so your **very first request may take ~10 seconds** while it spins back up. After that, it's quick.
+
+|                                                |                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------ |
+| ![Dashboard](docs/screenshot-dashboard.png)    | ![Uploading a document](docs/screenshot-document-upload.png) |
+| _Your documents — with live processing status_ | _Drag-and-drop upload_                                       |
 
 ---
 
-## Overview
+## What is this?
 
-DocuFlow lets users upload an invoice, contract, receipt, or spreadsheet and get back structured, extracted data — automatically, in the background. Upload a file, it gets queued, processed by AI, and the results show up with confidence scores per field.
+Imagine you have a pile of paperwork — invoices, contracts, receipts — and someone has to read each one and type the important bits into a system. DocuFlow does that for you. You:
 
-The backend is a **.NET 10 Clean Architecture + CQRS** app, split into Domain, Application, Infrastructure, and API layers, with multi-tenancy enforced at the database level via EF Core global query filters — every query is automatically scoped to the current tenant.
+1. **Upload** a document (PDF, TXT, CSV, or Excel).
+2. **Wait a moment** while it's processed in the background.
+3. **Get structured data back** — the fields defined by a schema (e.g. an invoice's number, date, total), each with a **confidence score** telling you how sure the AI is.
 
----
+It's the same idea behind "intelligent document processing" and OCR-plus-AI pipelines used in finance and operations — built from scratch to show how that technology actually works end to end.
 
-## Features
+**Why it matters:** instead of manual data entry, an AI model reads each document against a **configurable schema** and returns typed fields you can trust (or flag for review, thanks to the confidence scores).
 
-- **Document upload** — drag and drop PDF, TXT, CSV, or Excel files (up to 5MB)
-- **AI extraction** — fields and confidence scores extracted via Groq, per configurable schema (Invoice, Contract, Receipt, ID Document)
-- **Background processing** — uploads don't block; a Hangfire job pipeline moves documents through Uploaded → Queued → Processing → Completed/Failed
-- **Multi-tenancy** — tenant data fully isolated via EF Core global query filters
-- **Notifications** — webhook fires when extraction completes or fails
-- **Auth** — JWT access/refresh tokens
+### Try it in 60 seconds
 
----
-
-## Screenshots
-
-| Dashboard                                   | Upload                                         |
-| ------------------------------------------- | ---------------------------------------------- |
-| ![Dashboard](docs/screenshot-dashboard.png) | ![Upload](docs/screenshot-document-upload.png) |
-
-| Document Detail                                         |
-| ------------------------------------------------------- |
-| ![Document Detail](docs/screenshot-document-detail.png) |
+1. Open the [live demo](https://docu-flow.pages.dev) and register (any email + password — it's a demo, no verification).
+2. **Upload** a document (a short invoice PDF or a `.csv` works great).
+3. Watch it move through the pipeline: **Queued → Processing → Completed**.
+4. Open the document to see the **extracted fields and confidence scores**.
 
 ---
 
-## Tech Stack
+## What it does (features)
 
-**Backend** — .NET 10, ASP.NET Core, Clean Architecture + CQRS + MediatR, EF Core (Npgsql), FluentValidation, Hangfire, JWT Auth, API Versioning + Scalar
+- 🔐 **Secure, multi-tenant** — every tenant's documents are fully isolated at the database level.
+- 📄 **Document upload** — drag and drop PDF / TXT / CSV / Excel (up to 5MB).
+- 🤖 **AI extraction** — fields and confidence scores pulled per configurable schema (Invoice, Contract, Receipt, ID Document) via Groq.
+- ⚙️ **Background processing** — uploads never block; a Hangfire job pipeline moves each document through Uploaded → Queued → Processing → Completed/Failed.
+- 🔔 **Webhook notifications** — a webhook fires when extraction completes or fails, so downstream systems can react.
+- 🔑 **Auth** — JWT access/refresh tokens.
 
-**Frontend** — React 18 + Vite + TypeScript, TanStack Query, Tailwind CSS, React Hook Form + Zod, React Router, Axios
+---
 
-**Infrastructure** — Neon (Postgres), Cloudflare R2 (file storage), Groq (AI extraction), MailKit (email), Render (backend), Cloudflare Pages (frontend)
+## How it works
+
+DocuFlow is an **intelligent document-processing pipeline**. Two flows do the work:
+
+**Uploading & extracting a document (background):**
+
+```mermaid
+flowchart LR
+    A[Upload file] --> B[Store in Cloudflare R2]
+    B --> C[Create extraction job]
+    C --> D[Hangfire picks it up]
+    D --> E[Extract text<br/>PdfPig / EPPlus / plain read]
+    E --> F[Send text + schema to Groq]
+    F --> G[(Save fields + confidence)]
+    G --> H[Fire webhook]
+```
+
+**A request, end to end:**
+
+```mermaid
+flowchart LR
+    Q[HTTP request] --> C[Controller builds<br/>command/query]
+    C --> M[MediatR pipeline<br/>validate + log]
+    M --> H[Handler]
+    H --> R[Repositories<br/>read/write data]
+    R --> Resp[Return result up the chain]
+```
+
+In short: the API stores the file, queues a job, and returns immediately. A background worker pulls the text out of the file, hands it to the language model along with the tenant's schema, and saves the typed fields — then notifies the tenant by webhook.
+
+---
+
+## Tech stack
+
+| Area                | Technology                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Backend**         | .NET 10, ASP.NET Core Web API, Clean Architecture + CQRS (MediatR), EF Core (Npgsql), FluentValidation      |
+| **AI**              | Groq (LLM extraction against a configurable per-tenant schema)                                              |
+| **Text extraction** | PdfPig (PDF), EPPlus (Excel), plain reads (TXT/CSV)                                                         |
+| **Background jobs** | Hangfire (queued extraction pipeline)                                                                       |
+| **Frontend**        | React 18, TypeScript, Vite, TanStack Query, Tailwind CSS, React Hook Form + Zod, React Router, Axios        |
+| **Auth**            | JWT access/refresh tokens, multi-tenant isolation                                                           |
+| **API**             | API versioning, interactive docs via Scalar                                                                 |
+| **Cloud**           | Render (API), Cloudflare Pages (frontend), Neon (PostgreSQL), Cloudflare R2 (file storage), MailKit (email) |
 
 ---
 
 ## Architecture
+
+```mermaid
+flowchart TD
+    User([User]) --> SWA[React frontend<br/>Cloudflare Pages]
+    SWA -->|REST| API[.NET API<br/>Render]
+    API --> PG[(PostgreSQL / Neon)]
+    API --> R2[(Cloudflare R2)]
+    API --> Groq[Groq<br/>AI extraction]
+    API --> Hangfire[Hangfire<br/>background jobs]
+    Hangfire --> Groq
+```
 
 DocuFlow follows **Clean Architecture**, with the dependency rule flowing inward:
 
@@ -65,87 +112,78 @@ DocuFlow follows **Clean Architecture**, with the dependency rule flowing inward
 - **Infrastructure** — EF Core + PostgreSQL, Hangfire, Cloudflare R2, Groq, MailKit. The _how_.
 - **Api** — controllers, JWT middleware, tenant resolution, DI wiring.
 
-**A request, end to end:** a controller receives the HTTP call, builds a command/query object, and sends it through MediatR. A pipeline behaviour validates it (FluentValidation), logs it, then hands it to the matching handler. The handler talks to repositories (interfaces in Application, implementations in Infrastructure) to read/write data, and returns a result back up the chain to the controller.
-
-**How extraction works:** when a file is uploaded, the API stores it in Cloudflare R2 and creates an extraction job in Postgres. A Hangfire background job picks it up, pulls text out of the file (PdfPig for PDFs, EPPlus for Excel, plain reads for TXT/CSV), and sends it to Groq along with the tenant's configured schema. Extracted fields and confidence scores are saved, and a webhook fires to notify the tenant.
-
-![Architecture diagram](docs/architecture-diagram.png)
+Multi-tenancy is enforced at the database level via **EF Core global query filters** — every query is automatically scoped to the current tenant, so one tenant can never see another's data.
 
 ---
 
-## Getting Started (Local Development)
+## Engineering highlights
 
-### Prerequisites
+A few things worth calling out for a technical review:
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Node.js 18+](https://nodejs.org/) and npm
-- [Docker](https://www.docker.com/) (for local Postgres)
+- **Database-level multi-tenancy** — tenant isolation is enforced by EF Core global query filters, not scattered `WHERE` clauses, so it can't be forgotten on a new query.
+- **Non-blocking ingestion** — uploads return immediately; a Hangfire pipeline moves each document through explicit states (Uploaded → Queued → Processing → Completed/Failed) with failure handling.
+- **Schema-driven extraction** — the AI extracts against a configurable per-tenant schema (Invoice, Contract, Receipt, ID Document) and returns a confidence score per field for human-in-the-loop review.
+- **Format-aware text extraction** — PdfPig for PDFs, EPPlus for Excel, plain reads for TXT/CSV, all behind a common interface.
+- **CQRS with pipeline behaviours** — validation (FluentValidation) and logging run as MediatR pipeline behaviours, keeping handlers focused on business logic.
+- **Webhook notifications** — downstream systems are notified on completion or failure instead of polling.
 
-### 1. Start the database
+---
 
-```bash
-docker-compose up -d
-```
+## Running locally
 
-This starts a local Postgres instance on `localhost:5432`.
-
-### 2. Configure backend secrets
-
-The API reads configuration via `appsettings.Development.json` (or environment variables / user-secrets) — never commit real secrets. Required keys are listed in [Environment Variables](#environment-variables) below.
-
-A root-level [`.env.example`](.env.example) is provided as a reference for the env var names/format — copy it to `.env` and fill in real values, or transfer the keys into `appsettings.Development.json` / user-secrets.
-
-### 3. Run the backend
+**Prerequisites:** Docker, .NET 10 SDK, Node 18+.
 
 ```bash
-dotnet run --project src/DocuFlow.Api
-```
+# 1. Start Postgres
+docker-compose up -d              # Postgres on localhost:5432
 
-EF Core migrations run automatically on startup, so the database schema is created/updated on first run. API available at `http://localhost:5108`, with interactive docs at `/scalar`.
+# 2. Run the backend
+dotnet run --project src/DocuFlow.Api   # API on http://localhost:5108, docs at /scalar
 
-### 4. Run the frontend
-
-```bash
+# 3. Start the frontend
 cd frontend
 npm install
-npm run dev
+npm run dev                       # http://localhost:5173
 ```
 
-Frontend available at `http://localhost:5173`. Set `VITE_API_URL=http://localhost:5108/api` in `frontend/.env` if not already configured.
+EF Core migrations run automatically on startup, so the schema is created/updated on first run. Set `VITE_API_URL=http://localhost:5108/api` in `frontend/.env` if it isn't already.
 
----
+Configuration is read from `appsettings.Development.json` (or environment variables / user-secrets) — never commit real secrets. A root-level [`.env.example`](.env.example) lists the required keys (Postgres connection, `Jwt__*`, `Groq__ApiKey`, `R2__*`, `Email__*`, `Cors__AllowedOrigins`).
 
-## Environment Variables
+**Run the tests:**
 
-| Variable                                                                           | Description                                |
-| ---------------------------------------------------------------------------------- | ------------------------------------------ |
-| `ConnectionStrings__DefaultConnection`                                             | PostgreSQL connection string               |
-| `Jwt__Secret` / `Issuer` / `Audience` / `ExpiryMinutes` / `RefreshTokenExpiryDays` | JWT signing config                         |
-| `Groq__ApiKey`                                                                     | Groq API key for AI extraction             |
-| `R2__AccountId` / `AccessKeyId` / `SecretAccessKey` / `BucketName`                 | Cloudflare R2 credentials for file storage |
-| `Email__SmtpHost` / `SmtpPort` / `FromAddress` / `Username` / `Password`           | SMTP config for email notifications        |
-| `Cors__AllowedOrigins`                                                             | CORS allowed origin (frontend URL)         |
-| `VITE_API_URL` (frontend)                                                          | Base URL of the backend API                |
+```bash
+dotnet test tests/DocuFlow.UnitTests
+dotnet test tests/DocuFlow.IntegrationTests
+```
+
+Integration tests use `WebApplicationFactory` with a unique in-memory database per run to avoid state bleed.
 
 ---
 
 ## Deployment
 
-- **Backend** — deployed to [Render](https://render.com) as a Docker web service
-- **Frontend** — deployed to [Cloudflare Pages](https://pages.cloudflare.com), built from `frontend/` (`npm run build` → `dist`)
-- **Database** — [Neon](https://neon.tech) serverless Postgres
-- **Files** — [Cloudflare R2](https://developers.cloudflare.com/r2/) for document storage
+- **Backend** — deployed to [Render](https://render.com) as a Docker web service.
+- **Frontend** — deployed to [Cloudflare Pages](https://pages.cloudflare.com), built from `frontend/` (`npm run build` → `dist`).
+- **Database** — [Neon](https://neon.tech) serverless Postgres.
+- **Files** — [Cloudflare R2](https://developers.cloudflare.com/r2/) for document storage.
+
+To keep costs near zero, the demo uses free/low tiers that scale to zero when idle — hence the ~10 second wake-up on the first request after a quiet period.
 
 ---
 
-## Testing
+## Project structure
 
-```bash
-# Unit tests
-dotnet test tests/DocuFlow.UnitTests
-
-# Integration tests
-dotnet test tests/DocuFlow.IntegrationTests
+```
+src/
+├── DocuFlow.Domain          # Entities, enums, domain events — no dependencies
+├── DocuFlow.Application      # CQRS handlers, interfaces (the "what")
+├── DocuFlow.Infrastructure   # EF Core, Hangfire, R2, Groq, MailKit (the "how")
+└── DocuFlow.Api              # Controllers, JWT, tenant resolution, DI
+frontend/                     # React + TypeScript app
+tests/                        # Unit and integration suites
 ```
 
-Integration tests use `WebApplicationFactory` with a unique in-memory database per test run to avoid state bleed.
+---
+
+_Built as a portfolio project to demonstrate modern backend engineering (Clean Architecture, CQRS, multi-tenancy, background processing) and AI-powered document extraction on cloud-native infrastructure._
